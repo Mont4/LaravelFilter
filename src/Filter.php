@@ -1,6 +1,6 @@
 <?php
 
-namespace Mont4\Filter;
+namespace Mont4\LaravelFilter;
 
 use App\Http\Resources\Panel\Place\Place\PlaceIndexResource;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;

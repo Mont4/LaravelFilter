@@ -1,6 +1,6 @@
 <?php
 
-namespace Mont4\Filter;
+namespace Mont4\LaravelFilter;
 
 use Illuminate\Database\Eloquent\Builder;
 

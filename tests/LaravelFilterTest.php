@@ -13,13 +13,6 @@ class LaravelFilterTest extends TestCase
         return [FilterServiceProvider::class];
     }
 
-    protected function getPackageAliases($app)
-    {
-        return [
-            'laravel-filter' => LaravelFilter::class,
-        ];
-    }
-
     public function testExample()
     {
         $this->assertEquals(1, 1);
