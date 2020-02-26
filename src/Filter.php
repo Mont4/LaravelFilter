@@ -4,6 +4,7 @@ namespace Mont4\LaravelFilter;
 
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Shared\File;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -18,6 +19,7 @@ abstract class Filter
     protected $availableColumns = [];
     protected $ignoreColumns    = [];
 
+    protected $excelPrefixFileName   = '';
     protected $excelHeaders          = [];
     protected $excelAvailableColumns = [];
     protected $excelIgnoreColumns    = [];
@@ -146,17 +148,23 @@ abstract class Filter
 
     public function paginate($data)
     {
-        return $this->query->paginate($data['limit']);
+        $paginate = $this->query->paginate($data['limit']);
+
+        if($collection = $this->getResourceCollection($paginate)){
+            return $collection;
+        }
+
+        return $paginate;
     }
 
     public function excel($data)
     {
-        if($this->resourceFilter){
+        if (!$this->resourceFilter) {
             throw new \Exception("resource not found");
         }
 
         $rows = $this->query->get();
-        $rows = $this->resourceFilter::collection($rows)->jsonSerialize();
+        $rows = $this->getResourceCollection($rows)->jsonSerialize();
 
         $sheetData = [];
 
@@ -181,19 +189,25 @@ abstract class Filter
             $sheetData[] = $datum;
         }
 
-        $filename = new \DateTime() . '.xlsx';
-
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
+        $filename = $this->excelPrefixFileName . date("Y-m-d H:i:s") . '.xlsx';
 
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
         $sheet->fromArray($sheetData);
 
-        $writer = new Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit;
+        $pFilename = @tempnam(realpath(sys_get_temp_dir()), 'phpxltmp') . '.xlsx';
+        $writer    = new Xlsx($spreadsheet);
+        $writer->save($pFilename);
+
+        return response()->download($pFilename, $filename);
     }
 
+    public function getResourceCollection($rows)
+    {
+        if($this->resourceFilter){
+            return $this->resourceFilter::collection($rows);
+        }
+
+        return false;
+    }
 }
