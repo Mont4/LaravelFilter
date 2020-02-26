@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Trait Filterable
  *
- * @package Mont4\Filter
+ * @package Mont4\LaravelFilter
  *
  * @method static mixed filter()
  */

@@ -2,7 +2,6 @@
 
 namespace Mont4\LaravelFilter;
 
-use App\Http\Resources\Panel\Place\Place\PlaceIndexResource;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -152,16 +151,20 @@ abstract class Filter
 
     public function excel($data)
     {
+        if($this->resourceFilter){
+            throw new \Exception("resource not found");
+        }
+
         $rows = $this->query->get();
         $rows = $this->resourceFilter::collection($rows)->jsonSerialize();
 
-        $sheatData = [];
+        $sheetData = [];
 
         $header = [];
         foreach ($this->excelHeaders as $excelHeader) {
             $header[] = $excelHeader;
         }
-        $sheatData[] = $header;
+        $sheetData[] = $header;
 
         foreach ($rows as $row) {
             $datum = [];
@@ -175,10 +178,10 @@ abstract class Filter
                 $datum[] = $value;
             }
 
-            $sheatData[] = $datum;
+            $sheetData[] = $datum;
         }
 
-        $filename = 'hasan.xlsx';
+        $filename = new \DateTime() . '.xlsx';
 
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
@@ -186,7 +189,7 @@ abstract class Filter
 
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
-        $sheet->fromArray($sheatData);
+        $sheet->fromArray($sheetData);
 
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
