@@ -70,14 +70,13 @@ abstract class Filter
             'filter' => [],
         ];
         foreach ($fields as $key => $value) {
-            $fieldType = 'string'; // TODO.
-            \Log::info($key);
-            \Log::info($value);
+            $fieldType = 'string';
             if (in_array($key, $this->ignoreColumns))
                 continue;
-            if ($key == 'filter_method_request')
+            if ($key == 'filter_method_request') {
                 $data['method'] = $value;
-            continue;
+                continue;
+            }
             if ($key == 'page')
                 continue;
             if ($key == 'limit') {
@@ -150,7 +149,7 @@ abstract class Filter
     {
         $paginate = $this->query->paginate($data['limit']);
 
-        if($collection = $this->getResourceCollection($paginate)){
+        if ($collection = $this->getResourceCollection($paginate)) {
             return $collection;
         }
 
@@ -204,7 +203,7 @@ abstract class Filter
 
     public function getResourceCollection($rows)
     {
-        if($this->resourceFilter){
+        if ($this->resourceFilter) {
             return $this->resourceFilter::collection($rows);
         }
 
