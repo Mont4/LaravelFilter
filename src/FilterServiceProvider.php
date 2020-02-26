@@ -2,7 +2,7 @@
 
 namespace Mont4\LaravelFilter;
 
-class ServiceProvider extends \Illuminate\Support\ServiceProvider
+class FilterServiceProvider extends \Illuminate\Support\ServiceProvider
 {
     const CONFIG_PATH = __DIR__ . '/../config/filter.php';
 

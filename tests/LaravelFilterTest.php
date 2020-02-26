@@ -3,14 +3,14 @@
 namespace Mont4\LaravelFilter\Tests;
 
 use Mont4\LaravelFilter\Facades\LaravelFilter;
-use Mont4\LaravelFilter\ServiceProvider;
+use Mont4\LaravelFilter\FilterServiceProvider;
 use Orchestra\Testbench\TestCase;
 
 class LaravelFilterTest extends TestCase
 {
     protected function getPackageProviders($app)
     {
-        return [ServiceProvider::class];
+        return [FilterServiceProvider::class];
     }
 
     protected function getPackageAliases($app)
