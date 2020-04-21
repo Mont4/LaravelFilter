@@ -16,6 +16,8 @@ abstract class Filter
 
     protected $resourceFilter = NULL;
 
+    protected $rtlSheet = false;
+
     protected $availableColumns = [];
     protected $ignoreColumns    = [];
 
@@ -192,7 +194,15 @@ abstract class Filter
 
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
+        if ($this->rtlSheet) {
+            $sheet->setRightToLeft(true);
+        }
         $sheet->fromArray($sheetData);
+        $char = 'a';
+        for ($i = 0; $i < count($this->excelHeaders); $i++) {
+            $sheet->getColumnDimension($char++)
+                ->setAutoSize(true);
+        }
 
         $pFilename = @tempnam(realpath(sys_get_temp_dir()), 'phpxltmp') . '.xlsx';
         $writer    = new Xlsx($spreadsheet);
