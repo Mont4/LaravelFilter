@@ -2,11 +2,14 @@
 
 namespace Mont4\LaravelFilter;
 
+use Box\Spout\Common\Type;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Shared\File;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Rap2hpoutre\FastExcel\FastExcel;
+use Box\Spout\Writer\WriterFactory;
 
 abstract class Filter
 {
@@ -160,53 +163,52 @@ abstract class Filter
 
     public function excel($data)
     {
+        ini_set('max_execution_time', 120);
+
         if (!$this->resourceFilter) {
             throw new \Exception("resource not found");
         }
 
-        $rows = $this->query->get();
-        $rows = $this->getResourceCollection($rows)->jsonSerialize();
+        $pFilename = @tempnam(realpath(sys_get_temp_dir()), 'phpxltmp') . '.xlsx';
 
-        $sheetData = [];
+        $writer = WriterFactory::create(Type::XLSX);
+        $writer->setShouldUseInlineStrings(true)
+            ->setTempFolder(sys_get_temp_dir())
+            ->openToFile($pFilename);
 
+        // ------------------------------------ header ------------------------------------
         $header = [];
         foreach ($this->excelHeaders as $excelHeader) {
             $header[] = $excelHeader;
         }
-        $sheetData[] = $header;
+        $writer->addRow($header);
 
-        foreach ($rows as $row) {
-            $datum = [];
-            foreach ($row as $key => $value) {
-                if (is_array($value))
-                    continue;
+        // ------------------------------------ Rows ------------------------------------
+        $this->query->chunk(100, function ($rows) use ($writer) {
+            $rows = $this->getResourceCollection($rows)->jsonSerialize();
 
-                if (in_array($key, $this->excelIgnoreColumns))
-                    continue;
+            $sheetData = [];
+            foreach ($rows as $row) {
+                $datum = [];
+                foreach ($row as $key => $value) {
+                    if (is_array($value))
+                        continue;
 
-                $datum[] = $value;
+                    if (in_array($key, $this->excelIgnoreColumns))
+                        continue;
+
+                    $datum[] = $value;
+                }
+
+                $sheetData[] = $datum;
             }
 
-            $sheetData[] = $datum;
-        }
+            $writer->addRows($sheetData);
+        });
+
+        $writer->close();
 
         $filename = $this->excelPrefixFileName . date("Y-m-d H:i:s") . '.xlsx';
-
-        $spreadsheet = new Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
-        if ($this->rtlSheet) {
-            $sheet->setRightToLeft(true);
-        }
-        $sheet->fromArray($sheetData);
-        $char = 'a';
-        for ($i = 0; $i < count($this->excelHeaders); $i++) {
-            $sheet->getColumnDimension($char++)
-                ->setAutoSize(true);
-        }
-
-        $pFilename = @tempnam(realpath(sys_get_temp_dir()), 'phpxltmp') . '.xlsx';
-        $writer    = new Xlsx($spreadsheet);
-        $writer->save($pFilename);
 
         return response()->download($pFilename, $filename);
     }
