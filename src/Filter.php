@@ -184,7 +184,7 @@ abstract class Filter
         $writer->addRow($header);
 
         // ------------------------------------ Rows ------------------------------------
-        $this->query->chunk(100, function ($rows) use ($writer) {
+        $this->query->chunk(2000, function ($rows) use ($writer) {
             $rows = $this->getResourceCollection($rows)->jsonSerialize();
 
             $sheetData = [];
