@@ -12,8 +12,8 @@
   "homepage": "https://github.com/Mont4/LaravelFilter/",
   "keywords": ["Laravel", "Filter", "Datatable"],
   "require": {
+    "anourvalar/eloquent-serialize": "^1.1",
     "illuminate/support": ">=6.0",
-    "phpoffice/phpspreadsheet": "^1.10",
     "box/spout": "^2.7"
   },
   "require-dev": {

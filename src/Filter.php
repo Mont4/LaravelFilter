@@ -5,9 +5,7 @@ namespace Mont4\LaravelFilter;
 use Box\Spout\Common\Type;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Str;
-use PhpOffice\PhpSpreadsheet\Shared\File;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Mont4\LaravelFilter\Jobs\GenerateExcelJob;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Box\Spout\Writer\WriterFactory;
 
@@ -163,54 +161,24 @@ abstract class Filter
 
     public function excel($data)
     {
-        ini_set('max_execution_time', 120);
-
         if (!$this->resourceFilter) {
             throw new \Exception("resource not found");
         }
 
-        $pFilename = @tempnam(realpath(sys_get_temp_dir()), 'phpxltmp') . '.xlsx';
+        if ($this->query->count() > 1000) {
+            $filePath = dispatch(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->id()));
 
-        $writer = WriterFactory::create(Type::XLSX);
-        $writer->setShouldUseInlineStrings(true)
-            ->setTempFolder(sys_get_temp_dir())
-            ->openToFile($pFilename);
-
-        // ------------------------------------ header ------------------------------------
-        $header = [];
-        foreach ($this->excelHeaders as $excelHeader) {
-            $header[] = $excelHeader;
+            return [
+                'success' => true,
+                'message' => 'اکسل برای شما ایمیل خواهد شد.',
+            ];
         }
-        $writer->addRow($header);
 
-        // ------------------------------------ Rows ------------------------------------
-        $this->query->chunk(2000, function ($rows) use ($writer) {
-            $rows = $this->getResourceCollection($rows)->jsonSerialize();
-
-            $sheetData = [];
-            foreach ($rows as $row) {
-                $datum = [];
-                foreach ($row as $key => $value) {
-                    if (is_array($value))
-                        continue;
-
-                    if (in_array($key, $this->excelIgnoreColumns))
-                        continue;
-
-                    $datum[] = $value;
-                }
-
-                $sheetData[] = $datum;
-            }
-
-            $writer->addRows($sheetData);
-        });
-
-        $writer->close();
+        $filePath = dispatch_now(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->id()));
 
         $filename = $this->excelPrefixFileName . date("Y-m-d H:i:s") . '.xlsx';
 
-        return response()->download($pFilename, $filename);
+        return response()->download($filePath, $filename);
     }
 
     public function getResourceCollection($rows)
