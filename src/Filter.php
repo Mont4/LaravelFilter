@@ -166,7 +166,7 @@ abstract class Filter
         }
 
         if ($this->query->count() > 10000) {
-            $filePath = dispatch(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->user()->kind, auth()->id(), true));
+            dispatch(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->user()->kind, auth()->id(), true));
 
             return [
                 'success' => true,
@@ -188,5 +188,10 @@ abstract class Filter
         }
 
         return false;
+    }
+
+    public function setResourceCollection($resource = NULL)
+    {
+        $this->resourceFilter = $resource;
     }
 }
