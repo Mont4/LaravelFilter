@@ -165,8 +165,8 @@ abstract class Filter
             throw new \Exception("resource not found");
         }
 
-        if ($this->query->count() > 1000) {
-            $filePath = dispatch(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->id()));
+        if ($this->query->count() > 10000) {
+            $filePath = dispatch(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->user()->kind, auth()->id(), true));
 
             return [
                 'success' => true,
@@ -174,7 +174,7 @@ abstract class Filter
             ];
         }
 
-        $filePath = dispatch_now(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->id()));
+        $filePath = dispatch_now(new GenerateExcelJob($this->query, $this->resourceFilter, $this->excelIgnoreColumns, $this->excelPrefixFileName, auth()->user()->kind, auth()->id()));
 
         $filename = $this->excelPrefixFileName . date("Y-m-d H:i:s") . '.xlsx';
 

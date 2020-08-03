@@ -2,11 +2,13 @@
 
 namespace Mont4\LaravelFilter\Jobs;
 
+use App\Mail\OrderExcelDownloadMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mont4\LaravelFilter\Filter;
@@ -23,20 +25,24 @@ class GenerateExcelJob implements ShouldQueue
     private $excelIgnoreColumns;
     private $excelPrefixFileName;
 
+    private $userGuard;
     private $userId;
+    private $mailFlag;
 
     /**
      * Create a new job instance.
      *
      */
-    public function __construct($query, $resourceFilter, $excelIgnoreColumns, $excelPrefixFileName, $userId)
+    public function __construct($query, $resourceFilter, $excelIgnoreColumns, $excelPrefixFileName, $userGuard, $userId, $mailFlag = false)
     {
         $this->query               = \EloquentSerialize::serialize($query);
         $this->resourceFilter      = $resourceFilter;
         $this->excelIgnoreColumns  = $excelIgnoreColumns;
         $this->excelPrefixFileName = $excelPrefixFileName;
 
-        $this->userId = $userId;
+        $this->userGuard = $userGuard;
+        $this->userId    = $userId;
+        $this->mailFlag  = $mailFlag;
     }
 
     /**
@@ -46,7 +52,7 @@ class GenerateExcelJob implements ShouldQueue
      */
     public function handle()
     {
-        auth()->shouldUse('place_owner');
+        auth()->shouldUse($this->userGuard);
         auth()->loginUsingId($this->userId);
 
         if (!file_exists(base_path("storage/app/public/order/"))) {
@@ -64,7 +70,7 @@ class GenerateExcelJob implements ShouldQueue
         // ------------------------------------ header ------------------------------------
         $query = \EloquentSerialize::unserialize($this->query);
         $rows  = $query->limit(1)->get();
-        $rows = $this->getResourceCollection($rows)->jsonSerialize();
+        $rows  = $this->getResourceCollection($rows)->jsonSerialize();
 
         $header = [];
         foreach ($rows as $row) {
@@ -104,6 +110,15 @@ class GenerateExcelJob implements ShouldQueue
         });
 
         $writer->close();
+
+        if ($this->mailFlag) {
+            $datum = explode('/', $filenamePath);
+            $data  = [
+                'file' => last($datum),
+            ];
+
+            Mail::to(auth()->user()->email)->send(new OrderExcelDownloadMail($data));
+        }
 
         return $filenamePath;
     }
