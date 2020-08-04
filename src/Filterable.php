@@ -19,7 +19,7 @@ trait Filterable
     public function scopeSetFilterResource($query, $resource = NULL)
     {
         $this->filterResource = $resource;
-    }g
+    }
 
     public function scopeFilter(Builder $query)
     {
