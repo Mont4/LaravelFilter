@@ -16,10 +16,10 @@ trait Filterable
 {
     protected $filterResource;
 
-    public function scopeSetFilterResource($resource = NULL)
+    public function scopeSetFilterResource($query, $resource = NULL)
     {
         $this->filterResource = $resource;
-    }
+    }g
 
     public function scopeFilter(Builder $query)
     {
