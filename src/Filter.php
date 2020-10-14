@@ -14,6 +14,7 @@ abstract class Filter
 
     const METHOD_LIKE  = 'like';
     const METHOD_EQUAL = 'equal';
+    const METHOD_ARRAY = 'array';
 
     protected $resourceFilter = NULL;
 
@@ -83,7 +84,7 @@ abstract class Filter
             if ($key == 'page')
                 continue;
             if ($key == 'limit') {
-                $data['limit'] = $value;
+                $data['limit'] = (int)$value;
                 continue;
             }
 
@@ -106,7 +107,9 @@ abstract class Filter
             }
 
             $method = self::METHOD_EQUAL;
-            if (Str::contains($value, '~')) {
+            if (is_array($value)) {
+                $method = self::METHOD_ARRAY;
+            } else if (Str::contains($value, '~')) {
                 $value  = str_replace('~', '', $value);
                 $method = self::METHOD_LIKE;
             }
@@ -120,6 +123,8 @@ abstract class Filter
 
             $data['filter'] = $datum;
         }
+
+        \Log::info($data);
 
         return $data;
     }
@@ -141,6 +146,8 @@ abstract class Filter
             } else if ($datum['method'] == self::METHOD_LIKE) {
                 $this->query->where($datum['field'], 'like', "%{$datum['value']}%");
             } else if ($datum['method'] == self::METHOD_EQUAL) {
+                $this->query->where($datum['field'], $datum['value']);
+            } else if ($datum['method'] == self::METHOD_ARRAY) {
                 $this->query->where($datum['field'], $datum['value']);
             }
         }
