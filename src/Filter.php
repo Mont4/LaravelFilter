@@ -124,8 +124,6 @@ abstract class Filter
             $data['filter'] = $datum;
         }
 
-        \Log::info($data);
-
         return $data;
     }
 
