@@ -20,6 +20,12 @@ class Filter
 	public const METHOD_UNION              = 'union';
 	public const METHOD_ARRAY              = 'array';
 
+	public const ARRAY_METHODS = [
+		self::METHOD_ARRAY,
+		self::METHOD_UNION,
+		self::METHOD_INTERSECTION,
+	];
+
 	/**
 	 * The name of the filter's corresponding model.
 	 *
@@ -118,6 +124,10 @@ class Filter
 
 		$filters = [];
 		foreach ($fields as $key => $value) {
+			if (!$value) {
+				continue;
+			}
+
 			// ignore filter method
 			if (str_ends_with($key, '_method')) {
 				continue;
@@ -152,30 +162,12 @@ class Filter
 			}
 
 			if ($key == 'filter_order_direction') {
-				$filterOrderDirection = $value;
-				continue;
-			}
-
-			if (!$value) {
+				$filterOrderDirection = $value == 'ascending' ? 'asc' : 'desc';
 				continue;
 			}
 
 			// ------------------------------------ Filter value ------------------------------------
-			$method = self::METHOD_EQUAL;
-			if (is_array($value)) {
-				$method = self::METHOD_ARRAY;
-			}
-
-			if (isset($methods[$key])) {
-				$method = $methods[$key];
-				if (!is_array($value)) {
-					if ($methods[$key] === self::METHOD_INTERSECTION) {
-						$method = self::METHOD_EQUAL;
-					} else if ($methods[$key] === self::METHOD_UNION) {
-						$method = self::METHOD_NOT_EQUAL;
-					}
-				}
-			}
+			[$method, $value] = $this->getFilterMethod($key, $value, $methods);
 
 			$filters[] = [
 				'field'  => $key,
@@ -208,7 +200,7 @@ class Filter
 				continue;
 			}
 
-			switch ($filter['field']) {
+			switch ($filter['method']) {
 				case self::METHOD_LIKE:
 					$this->query->where($filter['field'], 'like', "%{$filter['value']}%");
 					break;
@@ -300,5 +292,30 @@ class Filter
 	public function setResourceCollection($resource = NULL)
 	{
 		$this->resourceFilter = $resource;
+	}
+
+	/**
+	 * @param string $key
+	 * @param        $value
+	 * @param array  $methods
+	 *
+	 * @return array
+	 */
+	private function getFilterMethod(string $key, $value, array $methods) :array
+	{
+		$method = self::METHOD_EQUAL;
+		if (is_array($value)) {
+			$method = self::METHOD_ARRAY;
+		}
+
+		if (array_key_exists($key, $methods)) {
+			$method = $methods[$key];
+		}
+
+		if (in_array($method, self::ARRAY_METHODS) && !is_array($value)) {
+			$value = [$value];
+		}
+		
+		return [$method, $value];
 	}
 }
